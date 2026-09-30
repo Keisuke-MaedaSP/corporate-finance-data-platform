@@ -14,6 +14,7 @@ with RAW_PATH.open(encoding="utf-8") as f:
 
 values = payload["GET_STATS_DATA"]["STATISTICAL_DATA"]["DATA_INF"]["VALUE"]
 # 辞書を階層順にたどり、統計レコードが格納されている VALUE を取り出す
+
 if isinstance(values, dict):
     values = [values]
 # isinstance(values, dict) は、values が辞書型かどうかを確認
@@ -45,7 +46,8 @@ def create_name_mapping(class_id: str) -> dict[str, str]:
     ].drop_duplicates()
 
     return dict(zip(target["code"], target["name"]))
-# zip()は複数のイテラブル（リストやタプルなど）の要素を同じインデックス（順番）ごとにまとめてペアを作る組み込み関数
+# zip()は複数のイテラブル（リストやタプルなど）の要素を同じインデックス（順番）
+# ごとにまとめてペアを作る組み込み関数
 
 item_mapping = create_name_mapping("cat01")
 industry_mapping = create_name_mapping("cat02")
@@ -75,7 +77,7 @@ output_columns = [
 
 df = df[output_columns].sort_values(
     ["fiscal_year", "industry_code", "capital_size_code", "item_code"]
-) #output_columnsの列に絞って列の順番を並び替え
+) #dfをoutput_columnsの列に絞って列の順番を並び替え
 
 key_columns = [
     "time_code",
@@ -85,19 +87,21 @@ key_columns = [
 ]
 
 assert len(df) == 540, f"想定外のレコード数: {len(df)}"
+# 540件でデータ取得漏れがないことを確認、あれば処理を止める
 assert df[key_columns].duplicated().sum() == 0, "主キーの重複があります"
+# 重複なし：同じ年度・業種・規模・項目が二重にないことを確認、あれば処理を止める
 assert df[["item_name", "industry_name", "capital_size_name"]].isna().sum().sum() == 0, (
     "コードから名称へ変換できない値があります"
-)
-negative_records = df[df["amount"] < 0]
+) # 名称欠損なし：コード変換に失敗していないことを確認、あれば処理を止める
 
+negative_records = df[df["amount"] < 0]
 if not negative_records.empty:
     print("\n負の値を含む財務項目:")
     print(
         negative_records[["item_code", "item_name"]]
         .drop_duplicates()
         .to_string(index=False)
-    )
+    ) # 金額が負の値になっているものを確認
 
 OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 df.to_csv(OUTPUT_PATH, index=False, encoding="utf-8")

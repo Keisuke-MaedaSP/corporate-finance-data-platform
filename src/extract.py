@@ -31,6 +31,7 @@ response = requests.get(
 # requests.get: e-Stat APIへGETリクエストを送る
 # params=params：先ほど作った取得条件を渡す
 # timeout=60：60秒応答がなければ停止する
+
 response.raise_for_status() 
 # raise_for_status()：HTTPエラーなら、その時点でエラーにするrequestsのメソッド
 payload = response.json() # .json()でPythonの辞書型に変換
@@ -38,12 +39,16 @@ payload = response.json() # .json()でPythonの辞書型に変換
 result = payload.get("GET_STATS_DATA", {}).get("RESULT", {}) 
 # GET_STATS_DATA があれば、その中身を返す、なければ空の辞書 {} を返す
 # .get()だとキーがなくてもエラーにならず、空の値で返せる
+
 status = result.get("@status") or result.get("STATUS")
-# e-Stat APIのステータス表記には、@status または STATUS が使われる可能性があるため、どちらでも対応可能なコード
+# e-Stat APIのステータス表記には、@status または STATUS が使われる可能性があるため、
+# どちらでも対応可能なコード
+
 if str(status) not in {"0", "None"}:
     raise RuntimeError(f"e-Stat APIエラー: {result}")
 # 0,Noneは正常なときの値
 # raise RuntimeError(...)：意図的にエラーを発生させ、処理を止める
+
 OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 with OUTPUT_PATH.open("w", encoding="utf-8") as f:
